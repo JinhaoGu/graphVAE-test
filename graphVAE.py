@@ -11,6 +11,8 @@ class GraphVAE(nn.Module):
         self.conv1 = GCNConv(in_channels, out_channels)
         self.conv_mu = GCNConv(out_channels, out_channels)
         self.conv_logvar = GCNConv(out_channels, out_channels)
+        # Additional layer for decoding
+        self.linear = nn.Linear(out_channels, in_channels)
         
     def encode(self, x, edge_index):
         x = F.relu(self.conv1(x, edge_index))
@@ -23,10 +25,10 @@ class GraphVAE(nn.Module):
         else:
             return mu
     
-    def decode(self, z, edge_index):
-        return self.conv1(z, edge_index)
+    def decode(self, z):
+        return torch.sigmoid(self.linear(z))
     
     def forward(self, x, edge_index):
         mu, logvar = self.encode(x, edge_index)
         z = self.reparameterize(mu, logvar)
-        return self.decode(z, edge_index), mu, logvar
+        return self.decode(z), mu, logvar
